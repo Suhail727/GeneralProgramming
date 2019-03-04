@@ -1484,3 +1484,193 @@ ggplot(data = data.frame(decisiontree_model_5_SMOTE$results), aes(x = cp, y = Ac
   geom_line() +
   geom_point() +
   labs(x = "Complexity Parameter (CP)", y = "Accuracy", title = "CP vs Accuracy")
+
+
+
+
+
+
+
+
+####################################################################################################
+###################################### LOGISTIC REGRESSION #########################################
+####################################################################################################
+
+####################################### PREPARING DATA #############################################
+
+########################################################################
+############################ COMBINED DATA #############################
+########################################################################
+logistic_data <- data
+
+# Remove Age Group, Salary Group and ApplicationID
+logistic_data <- logistic_data[ , -which(names(logistic_data) %in% c("age_group","salary_group","Application.ID"))]
+
+# Convert Categorical Variables to factors
+categorical_variables <- c('Gender', 'Marital.Status..at.the.time.of.application.', 'Education', 'Profession',
+                            'Type.of.residence','Presence.of.open.auto.loan','Presence.of.open.home.loan','Performance.Tag')
+logistic_data[, categorical_variables] <- lapply(categorical_variables, function(x) as.factor(as.character(logistic_data[, x])))
+
+# Remove Performance.Tag from list of categorical variables for dummy variable creation
+categorical_variables <- categorical_variables[categorical_variables != 'Performance.Tag']
+# Convert Factor variables to dummy variables
+factor_variables <- logistic_data[ , which(names(logistic_data) %in% categorical_variables)]
+factor_variables_dummy<- data.frame(sapply(factor_variables,function(x) data.frame(model.matrix(~x-1,data =factor_variables))[,-1]))
+logistic_data <- cbind(factor_variables_dummy,logistic_data[ , -which(names(logistic_data) %in% categorical_variables)])
+
+
+# Scale the Numeric Variables
+numeric_variables <- c('Age', 'No.of.dependents', 'Income', 'No.of.months.in.current.residence', 'No.of.months.in.current.company',
+                        'No.of.times.90.DPD.or.worse.in.last.6.months', 'No.of.times.60.DPD.or.worse.in.last.6.months',
+                        'No.of.times.30.DPD.or.worse.in.last.6.months', 'No.of.times.90.DPD.or.worse.in.last.12.months',
+                        'No.of.times.60.DPD.or.worse.in.last.12.months', 'No.of.times.30.DPD.or.worse.in.last.12.months',
+                        'Avgas.CC.Utilization.in.last.12.months','No.of.trades.opened.in.last.6.months',
+                        'No.of.trades.opened.in.last.12.months', 'No.of.PL.trades.opened.in.last.6.months',
+                        'No.of.PL.trades.opened.in.last.12.months', 'No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.',
+                        'No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.', 'Outstanding.Balance',
+                        'Total.No.of.Trades')
+logistic_data[, numeric_variables] <- lapply(numeric_variables, function(x) scale(logistic_data[, x]))
+
+# Split into Train and Test
+set.seed(1)
+ntrain <- sample.split(logistic_data$Performance.Tag, SplitRatio = 0.70)
+
+logistic_data_train <- logistic_data[ntrain, ]
+logistic_data_test <- logistic_data[!ntrain, ]
+
+
+########################################################################
+########################## DEMOGRAPHIC DATA ############################
+########################################################################
+logistic_demographic_data <- data %>%
+  dplyr::select(names(ddata[,-12]),Performance.Tag)
+
+# Remove ApplicationID
+logistic_demographic_data <- logistic_demographic_data[ , -which(names(logistic_demographic_data) %in% c("Application.ID"))]
+
+# Convert Categorical Variables to factors
+categorical_variables <- c('Gender', 'Marital.Status..at.the.time.of.application.', 'Education', 'Profession',
+                            'Type.of.residence','Performance.Tag')
+logistic_demographic_data[, categorical_variables] <- lapply(categorical_variables, function(x) as.factor(as.character(logistic_demographic_data[, x])))
+
+
+# Scale the Numeric Variables
+numeric_variables <- c('Age', 'No.of.dependents', 'Income', 'No.of.months.in.current.residence', 'No.of.months.in.current.company')
+logistic_demographic_data[, numeric_variables] <- lapply(numeric_variables, function(x) scale(logistic_demographic_data[, x]))
+
+# Remove Performance.Tag from list of categorical variables for dummy variable creation
+categorical_variables <- categorical_variables[categorical_variables != 'Performance.Tag']
+
+# Convert Factor variables to dummy variables
+factor_variables <- logistic_demographic_data[ , which(names(logistic_demographic_data) %in% categorical_variables)]
+factor_variables_dummy<- data.frame(sapply(factor_variables,function(x) data.frame(model.matrix(~x-1,data =factor_variables))[,-1]))
+logistic_demographic_data <- cbind(factor_variables_dummy,logistic_demographic_data[ , -which(names(logistic_demographic_data) %in% categorical_variables)])
+
+# Split into Train and Test
+set.seed(1)
+ntrain <- sample.split(logistic_demographic_data$Performance.Tag, SplitRatio = 0.70)
+
+logistic_demographic_data_train <- logistic_demographic_data[ntrain, ]
+logistic_demographic_data_test <- logistic_demographic_data[!ntrain, ]
+
+####################################### BUILDING MODELS ############################################
+##################### MODEL 1 #######################
+################# Demographic Data ##################
+################## Without SMOTE ####################
+# Build Model
+logistic_demographic_model_1 <- glm(Performance.Tag ~ ., data = train, family = "binomial")
+summary(logistic_demographic_model_1) 
+# AIC: 16705
+
+# Step AIC
+logistic_demographic_model_2 <- stepAIC(logistic_demographic_model_1, direction = "both")
+summary(logistic_demographic_model_2)
+vif(logistic_demographic_model_2)
+# AIC: 16683
+
+# Remove Education.xOthers due to low p-value
+logistic_demographic_model_3 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
+                                No.of.months.in.current.company + Profession.xSE,
+                                data = train, family = "binomial")
+summary(logistic_demographic_model_3)
+vif(logistic_demographic_model_3)
+# AIC: 16683
+
+# Remove Profession.xSE due to low p-value
+logistic_demographic_model_4 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
+                                No.of.months.in.current.company,
+                                data = train, family = "binomial")
+summary(logistic_demographic_model_4)
+vif(logistic_demographic_model_4)
+# AIC: 16684
+
+# Final Model
+logistic_demographic_model <- logistic_demographic_model_4
+
+##### Model Evaluation #####
+logistic_demographic_model_predicted = predict(logistic_demographic_model, type = "response", newdata = logistic_demographic_data_test)  
+summary(logistic_demographic_model_predicted)
+
+# Add the prediction probability with the test data set for further model evaluation steps.
+logistic_demographic_data_test$prob <- logistic_demographic_model_predicted
+
+# View the test dataset including prediction probabity.
+View(logistic_demographic_data_test)
+
+# Let's use the probability cutoff of 50%.
+actual <- factor(ifelse(logistic_demographic_data_test$Performance.Tag==1,"Yes","No"))
+predicted <- factor(ifelse(logistic_demographic_model_predicted >= 0.50, "Yes", "No"))
+
+confusionMatrix(predicted, actual, positive = "Yes")
+# Accuracy : 95.78%
+# Sensitivity : 0%       
+# Specificity : 100%
+
+# Find optimal cutoff
+confusion_matrix_iteration <- function(cutoff) 
+{
+  predicted <- factor(ifelse(logistic_demographic_model_predicted >= cutoff, "Yes", "No"))
+  conf_matrix <- confusionMatrix(predicted, actual, positive = "Yes")
+  accuracy <- conf_matrix$overall[1]
+  sensitivity <- conf_matrix$byClass[1]
+  specificity <- conf_matrix$byClass[2]
+  matrix_row <- t(as.matrix(c(sensitivity, specificity, accuracy))) 
+  colnames(matrix_row) <- c("Sensitivity", "Specificity", "Accuracy")
+  return(matrix_row)
+}
+
+calculate_cutoff <- function()
+{
+  s = seq(.01,.80,length=100)
+  # Initialize a 100x3 matrix with 0 as default value.
+  cutoff_matrix = matrix(0,100,3)
+  # Call the perform_fn in a loop and assign the output to OUT matrix for "sensitivity", "specificity", "accuracy".
+  for(i in 1:100)
+  {
+    cutoff_matrix[i,] = confusion_matrix_iteration(s[i])
+  } 
+  plot(s, cutoff_matrix[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2) +
+  axis(1,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5) +
+  axis(2,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5) +
+  lines(s,cutoff_matrix[,2],col="darkgreen",lwd=2) +
+  lines(s,cutoff_matrix[,3],col=4,lwd=2) 
+
+  # Add legends to the plot created earlier.
+  legend(0.60,0.75,col=c(2,"darkgreen",4,"darkred"),lwd=c(2,2,2,2),c("Sensitivity","Specificity","Accuracy")) 
+
+  # Add a box over the plot.
+  box()
+
+  # Calcualte the cut-off value based on nominal difference between Sensitivity and Specificity.
+  cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.12)]
+  return(cutoff)
+}
+
+cutoff <- calculate_cutoff()
+
+
+predicted <- factor(ifelse(logistic_demographic_model_predicted >=cutoff, "Yes", "No"))
+confusionMatrix(predicted, actual, positive = "Yes")
+# Accuracy : 52.45%
+# Sensitivity : 59.74%       
+# Specificity : 52.12%
