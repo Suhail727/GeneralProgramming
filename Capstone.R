@@ -1275,17 +1275,15 @@ categorical_variables <- c('Gender', 'Marital.Status..at.the.time.of.application
                             'Type.of.residence','Presence.of.open.auto.loan','Presence.of.open.home.loan','Performance.Tag')
 decisiontree_data[, categorical_variables] <- lapply(categorical_variables, function(x) as.factor(as.character(decisiontree_data[, x])))
 
+# Remove Age Group, Salary Group and ApplicationID
+decisiontree_data <- decisiontree_data[ , -which(names(decisiontree_data) %in% c("age_group","salary_group","Application.ID"))]
+
 # Split into Train and Test
 set.seed(1)
-ntrain <- sample.split(decisiontree_data$Performance.Tag, SplitRatio = 0.50)
+ntrain <- sample.split(decisiontree_data$Performance.Tag, SplitRatio = 0.70)
 decisiontree_data_train <- decisiontree_data[ntrain, ]
 decisiontree_data_test <- decisiontree_data[!ntrain, ]
 
-table(decisiontree_data_train$Performance.Tag)
-#     0     1 
-# 32835  1446 
-
-str(decisiontree_data_train)
 ####################################### BUILDING MODELS ############################################
 ##################### MODEL x #######################
 ################## Combined Data ####################
@@ -1367,7 +1365,7 @@ decisiontree_model_5 <- train(Performance.Tag ~ .,
                               control = rpart.control(minsplit = 50,
                                                       minbucket = 20))
 # Predict on Test Data
-decisiontree_model_5_predicted <- predict(decisiontree_model_5, decisiontree_data_test, type = "class")
+decisiontree_model_5_predicted <- predict(decisiontree_model_5, decisiontree_data_test)
 
 # Confusion Matrix
 confusionMatrix(decisiontree_model_5_predicted, decisiontree_data_test$Performance.Tag)
@@ -1386,3 +1384,103 @@ ggplot(data = data.frame(decisiontree_model_5$results), aes(x = cp, y = Accuracy
 ##################### MODEL x #######################
 ################## Combined Data ####################
 #################### With SMOTE #####################
+# Check if data is balanced
+table(decisiontree_data_train$Performance.Tag)
+#     0     1 
+# 45969  2024 
+# The data is unbalanced
+
+decisiontree_data_train_SMOTE <- SMOTE(Performance.Tag ~ ., decisiontree_data_train, perc.over = 100, perc.under=200)
+table(decisiontree_data_train_SMOTE$Performance.Tag)
+#    0    1 
+# 4048 4048 
+
+######## Build standard Decision Tree Model
+decisiontree_model_1_SMOTE <- rpart(Performance.Tag ~ .,
+                              data = decisiontree_data_train_SMOTE,
+                              method = "class")                   
+prp(decisiontree_model_1_SMOTE)
+
+# Predict on Test Data
+decisiontree_model_1_SMOTE_predicted <- predict(decisiontree_model_1_SMOTE, decisiontree_data_test, type = "class")
+
+# Confusion Matrix
+confusionMatrix(decisiontree_model_1_SMOTE_predicted, decisiontree_data_test$Performance.Tag)
+# Accuracy : 65.52%
+# Sensitivity: 65.82%
+# Specificity: 58.47%
+
+######## Use Information Gain
+decisiontree_model_2_SMOTE <- rpart(Performance.Tag ~ .,         
+                              data = decisiontree_data_train_SMOTE,     
+                              method = "class",            
+                              parms = list(split = "information"))
+prp(decisiontree_model_2_SMOTE)
+
+# Predict on Test Data
+decisiontree_model_2_SMOTE_predicted <- predict(decisiontree_model_2_SMOTE, decisiontree_data_test, type = "class")
+
+# Confusion Matrix
+confusionMatrix(decisiontree_model_2_SMOTE_predicted, decisiontree_data_test$Performance.Tag)
+# Accuracy : 65.52%
+# Sensitivity: 65.82%
+# Specificity: 58.47%
+
+######## Tune Hyperparameters
+decisiontree_model_3_SMOTE <- rpart(Performance.Tag ~ .,                          # formula
+                                  data = decisiontree_data_train_SMOTE,           # training data
+                                  method = "class",                         # classification or regression
+                                  control = rpart.control(minsplit = 1000,  # min observations for node
+                                                          minbucket = 1000, # min observations for leaf node
+                                                          cp = 0.05))       # complexity parameter
+prp(decisiontree_model_3_SMOTE)
+
+# Predict on Test Data
+decisiontree_model_3_SMOTE_predicted <- predict(decisiontree_model_3_SMOTE, decisiontree_data_test, type = "class")
+
+# Confusion Matrix
+confusionMatrix(decisiontree_model_3_SMOTE_predicted, decisiontree_data_test$Performance.Tag)
+# Accuracy : 70.26%
+# Sensitivity: 71.08%
+# Specificity: 51.55%
+
+######## Increase Complexity
+decisiontree_model_4_SMOTE <- rpart(Performance.Tag ~ .,                          # formula
+                              data = decisiontree_data_train_SMOTE,               # training data
+                              method = "class",                             # classification or regression
+                              control = rpart.control(minsplit = 1,         # min observations for node
+                                                      minbucket = 1,        # min observations for leaf node
+                                                      cp = 0.001))          # complexity parameter
+prp(decisiontree_model_4_SMOTE)
+
+# Predict on Test Data
+decisiontree_model_4_SMOTE_predicted <- predict(decisiontree_model_4_SMOTE, decisiontree_data_test, type = "class")
+
+# Confusion Matrix
+confusionMatrix(decisiontree_model_4_SMOTE_predicted, decisiontree_data_test$Performance.Tag)
+# Accuracy : 73.77%
+# Sensitivity: 75.23%
+# Specificity: 40.71%
+
+######## Cross Test 
+decisiontree_model_5_SMOTE <- train(Performance.Tag ~ .,
+                              data = decisiontree_data_train_SMOTE,
+                              method = "rpart",
+                              metric = "Accuracy",
+                              trControl = trainControl(method = "cv", number = 5),
+                              tuneGrid = expand.grid(cp = seq(0, 0.02, 0.0025)),
+                              control = rpart.control(minsplit = 50,
+                                                      minbucket = 20))
+# Predict on Test Data
+decisiontree_model_5_SMOTE_predicted <- predict(decisiontree_model_5_SMOTE, decisiontree_data_test)
+
+# Confusion Matrix
+confusionMatrix(decisiontree_model_5_SMOTE_predicted, decisiontree_data_test$Performance.Tag)
+# Accuracy : 74.36%
+# Sensitivity: 75.72%
+# Specificity: 43.46%
+
+ggplot(data = data.frame(decisiontree_model_5_SMOTE$results), aes(x = cp, y = Accuracy*100)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Complexity Parameter (CP)", y = "Accuracy", title = "CP vs Accuracy")
