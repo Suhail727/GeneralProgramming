@@ -1578,31 +1578,31 @@ logistic_demographic_data_test <- logistic_demographic_data[!ntrain, ]
 ################# Demographic Data ##################
 ################## Without SMOTE ####################
 # Build Model
-logistic_demographic_model_1 <- glm(Performance.Tag ~ ., data = train, family = "binomial")
+logistic_demographic_model_1 <- glm(Performance.Tag ~ ., data = logistic_demographic_data_train, family = "binomial")
 summary(logistic_demographic_model_1) 
-# AIC: 16705
+# AIC: 16708
 
 # Step AIC
 logistic_demographic_model_2 <- stepAIC(logistic_demographic_model_1, direction = "both")
 summary(logistic_demographic_model_2)
 vif(logistic_demographic_model_2)
-# AIC: 16683
+# AIC: 16687
 
-# Remove Education.xOthers due to low p-value
-logistic_demographic_model_3 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
-                                No.of.months.in.current.company + Profession.xSE,
-                                data = train, family = "binomial")
+# Remove Type.of.residence.xOthers due to low p-value
+logistic_demographic_model_3 <- glm(Performance.Tag ~ Profession.xSE + 
+                                    Income + No.of.months.in.current.residence + No.of.months.in.current.company,
+                                data = logistic_demographic_data_train, family = "binomial")
 summary(logistic_demographic_model_3)
 vif(logistic_demographic_model_3)
-# AIC: 16683
+# AIC: 16688
 
 # Remove Profession.xSE due to low p-value
 logistic_demographic_model_4 <- glm(Performance.Tag ~ Income + No.of.months.in.current.residence + 
                                 No.of.months.in.current.company,
-                                data = train, family = "binomial")
+                                data = logistic_demographic_data_train, family = "binomial")
 summary(logistic_demographic_model_4)
 vif(logistic_demographic_model_4)
-# AIC: 16684
+# AIC: 16690
 
 # Final Model
 logistic_demographic_model <- logistic_demographic_model_4
@@ -1627,9 +1627,9 @@ confusionMatrix(predicted, actual, positive = "Yes")
 # Specificity : 100%
 
 # Find optimal cutoff
-confusion_matrix_iteration <- function(cutoff) 
+confusion_matrix_iteration <- function(cutoff,data_predicted) 
 {
-  predicted <- factor(ifelse(logistic_demographic_model_predicted >= cutoff, "Yes", "No"))
+  predicted <- factor(ifelse(data_predicted >= cutoff, "Yes", "No"))
   conf_matrix <- confusionMatrix(predicted, actual, positive = "Yes")
   accuracy <- conf_matrix$overall[1]
   sensitivity <- conf_matrix$byClass[1]
@@ -1639,7 +1639,7 @@ confusion_matrix_iteration <- function(cutoff)
   return(matrix_row)
 }
 
-calculate_cutoff <- function()
+calculate_cutoff <- function(data_predicted)
 {
   s = seq(.01,.80,length=100)
   # Initialize a 100x3 matrix with 0 as default value.
@@ -1647,7 +1647,7 @@ calculate_cutoff <- function()
   # Call the perform_fn in a loop and assign the output to OUT matrix for "sensitivity", "specificity", "accuracy".
   for(i in 1:100)
   {
-    cutoff_matrix[i,] = confusion_matrix_iteration(s[i])
+    cutoff_matrix[i,] = confusion_matrix_iteration(s[i],data_predicted)
   } 
   plot(s, cutoff_matrix[,1],xlab="Cutoff",ylab="Value",cex.lab=1.5,cex.axis=1.5,ylim=c(0,1),type="l",lwd=2,axes=FALSE,col=2) +
   axis(1,seq(0,1,length=5),seq(0,1,length=5),cex.lab=1.5) +
@@ -1662,15 +1662,277 @@ calculate_cutoff <- function()
   box()
 
   # Calcualte the cut-off value based on nominal difference between Sensitivity and Specificity.
-  cutoff <- s[which(abs(OUT[,1]-OUT[,2])<0.12)]
+  cutoff <- s[which(abs(cutoff_matrix[,1]-cutoff_matrix[,2])<0.12)]
   return(cutoff)
 }
 
-cutoff <- calculate_cutoff()
+cutoff <- calculate_cutoff(logistic_demographic_model_predicted)
 
 
 predicted <- factor(ifelse(logistic_demographic_model_predicted >=cutoff, "Yes", "No"))
 confusionMatrix(predicted, actual, positive = "Yes")
-# Accuracy : 52.45%
-# Sensitivity : 59.74%       
-# Specificity : 52.12%
+# Accuracy : 52.59%
+# Sensitivity : 59.17%       
+# Specificity : 52.29%
+
+##################### MODEL 1 #######################
+################# Demographic Data ##################
+#################### With SMOTE #####################
+# Check if data is balanced
+table(logistic_demographic_data_train$Performance.Tag)
+#     0     1 
+# 45969  2024 
+# The data is unbalanced
+
+logistic_demographic_data_train_SMOTE <- SMOTE(Performance.Tag ~ ., logistic_demographic_data_train, perc.over = 100, perc.under=200)
+table(logistic_demographic_data_train_SMOTE$Performance.Tag)
+#    0    1 
+# 4048 4048 
+
+# Build Model
+logistic_demographic_model_1_SMOTE <- glm(Performance.Tag ~ ., data = logistic_demographic_data_train_SMOTE, family = "binomial")
+summary(logistic_demographic_model_1_SMOTE) 
+# AIC: 11132
+
+# Step AIC
+logistic_demographic_model_2_SMOTE <- stepAIC(logistic_demographic_model_1_SMOTE, direction = "both")
+summary(logistic_demographic_model_2_SMOTE)
+vif(logistic_demographic_model_2_SMOTE)
+# AIC: 11113
+
+# Remove Profession.xSE_PROF due to low p-value
+logistic_demographic_model_3_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                                      Education.xMasters + Age + Income + 
+                                      No.of.months.in.current.residence + No.of.months.in.current.company, 
+                                    family = "binomial", data = logistic_demographic_data_train_SMOTE)
+summary(logistic_demographic_model_3_SMOTE)
+vif(logistic_demographic_model_3_SMOTE)
+# AIC: 11113
+
+# Remove Marital.Status..at.the.time.of.application. due to low p-value
+logistic_demographic_model_4_SMOTE <- glm(formula = Performance.Tag ~ Education.xMasters + Age + Income + 
+                                      No.of.months.in.current.residence + No.of.months.in.current.company, 
+                                    family = "binomial", data = logistic_demographic_data_train_SMOTE)
+summary(logistic_demographic_model_4_SMOTE)
+vif(logistic_demographic_model_4_SMOTE)
+# AIC: 11114
+
+# Remove No.of.months.in.current.residence due to low p-value
+logistic_demographic_model_5_SMOTE <- glm(formula = Performance.Tag ~ Education.xMasters + Age + Income + 
+                                      No.of.months.in.current.company, 
+                                    family = "binomial", data = logistic_demographic_data_train_SMOTE)
+summary(logistic_demographic_model_5_SMOTE)
+vif(logistic_demographic_model_5_SMOTE)
+# AIC: 11114
+
+# Remove Education.xMasters due to low p-value
+logistic_demographic_model_6_SMOTE <- glm(formula = Performance.Tag ~ Age + Income + 
+                                      No.of.months.in.current.company, 
+                                    family = "binomial", data = logistic_demographic_data_train_SMOTE)
+summary(logistic_demographic_model_6_SMOTE)
+vif(logistic_demographic_model_6_SMOTE)
+# AIC: 11116
+
+# Remove Age due to low p-value
+logistic_demographic_model_7_SMOTE <- glm(formula = Performance.Tag ~ Income + 
+                                      No.of.months.in.current.company, 
+                                    family = "binomial", data = logistic_demographic_data_train_SMOTE)
+summary(logistic_demographic_model_7_SMOTE)
+vif(logistic_demographic_model_7_SMOTE)
+# AIC: 11117
+
+# Final Model
+logistic_demographic_model <- logistic_demographic_model_7_SMOTE
+
+##### Model Evaluation #####
+logistic_demographic_model_predicted = predict(logistic_demographic_model, type = "response", newdata = logistic_demographic_data_test)  
+summary(logistic_demographic_model_predicted)
+
+# Add the prediction probability with the test data set for further model evaluation steps.
+logistic_demographic_data_test$prob <- logistic_demographic_model_predicted
+
+# View the test dataset including prediction probabity.
+View(logistic_demographic_data_test)
+
+# Let's use the probability cutoff of 50%.
+actual <- factor(ifelse(logistic_demographic_data_test$Performance.Tag==1,"Yes","No"))
+predicted <- factor(ifelse(logistic_demographic_model_predicted >= 0.50, "Yes", "No"))
+
+confusionMatrix(predicted, actual, positive = "Yes")
+# Accuracy : 53.46%
+# Sensitivity : 56.74%       
+# Specificity : 53.31%
+
+# Find optimal cutoff
+cutoff <- calculate_cutoff(logistic_demographic_model_predicted)
+
+
+predicted <- factor(ifelse(logistic_demographic_model_predicted >=cutoff, "Yes", "No"))
+confusionMatrix(predicted, actual, positive = "Yes")
+# Accuracy : 56.05%
+# Sensitivity : 54.09%       
+# Specificity : 56.13%
+##################### MODEL x #######################
+################## Combined Data ####################
+################## Without SMOTE ####################
+# Build Model
+logistic_model_1 <- glm(Performance.Tag ~ ., data = logistic_data_train, family = "binomial")
+summary(logistic_model_1) 
+# AIC: 16135
+
+# Step AIC
+logistic_model_2 <- stepAIC(logistic_model_1, direction = "both")
+summary(logistic_model_2)
+sort(vif(logistic_model_2),decreasing = TRUE)
+# AIC: 16105
+
+# Remove No.of.Inquiries.in.last.6.months..excluding.home...auto.loans due to low p-value
+logistic_model_3 <- glm(formula = Performance.Tag ~ Profession.xSE + Type.of.residence.xOthers + 
+                          No.of.months.in.current.residence + No.of.months.in.current.company + 
+                          No.of.times.90.DPD.or.worse.in.last.6.months + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          No.of.times.90.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.6.months + No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_3)
+sort(vif(logistic_model_3),decreasing = TRUE)
+# AIC: 16106
+
+# Remove No.of.PL.trades.opened.in.last.6.months due to low p-value
+logistic_model_4 <- glm(formula = Performance.Tag ~ Profession.xSE + Type.of.residence.xOthers + 
+                          No.of.months.in.current.residence + No.of.months.in.current.company + 
+                          No.of.times.90.DPD.or.worse.in.last.6.months + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          No.of.times.90.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_4)
+sort(vif(logistic_model_4),decreasing = TRUE)
+# AIC: 16106
+
+# Remove Type.of.residence.xOthers due to low p-value
+logistic_model_5 <- glm(formula = Performance.Tag ~ Profession.xSE + 
+                          No.of.months.in.current.residence + No.of.months.in.current.company + 
+                          No.of.times.90.DPD.or.worse.in.last.6.months + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          No.of.times.90.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_5)
+sort(vif(logistic_model_5),decreasing = TRUE)
+# AIC: 16107
+
+# Remove No.of.months.in.current.residence due to low p-value
+logistic_model_6 <- glm(formula = Performance.Tag ~ Profession.xSE + 
+                          No.of.months.in.current.company + 
+                          No.of.times.90.DPD.or.worse.in.last.6.months + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          No.of.times.90.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_6)
+sort(vif(logistic_model_6),decreasing = TRUE)
+# AIC: 16107
+
+# Remove Profession.xSE due to low p-value
+logistic_model_7 <- glm(formula = Performance.Tag ~  
+                          No.of.months.in.current.company + 
+                          No.of.times.90.DPD.or.worse.in.last.6.months + No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          No.of.times.90.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_7)
+sort(vif(logistic_model_7),decreasing = TRUE)
+# AIC: 16108
+
+# Remove No.of.times.90.DPD.or.worse.in.last.6.months due to low p-value
+logistic_model_8 <- glm(formula = Performance.Tag ~  
+                          No.of.months.in.current.company + 
+                          No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          No.of.times.90.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_8)
+sort(vif(logistic_model_8),decreasing = TRUE)
+# AIC: 16111
+
+# Remove No.of.times.90.DPD.or.worse.in.last.12.months due to low p-value
+logistic_model_9 <- glm(formula = Performance.Tag ~  
+                          No.of.months.in.current.company + 
+                          No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_9)
+sort(vif(logistic_model_9),decreasing = TRUE)
+# AIC: 16110
+
+# Remove No.of.times.90.DPD.or.worse.in.last.12.months due to low p-value
+logistic_model_10 <- glm(formula = Performance.Tag ~  
+                          No.of.times.30.DPD.or.worse.in.last.6.months + 
+                          Avgas.CC.Utilization.in.last.12.months + 
+                          No.of.PL.trades.opened.in.last.12.months + 
+                          No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                          Total.No.of.Trades, family = "binomial", data = logistic_data_train)
+summary(logistic_model_10)
+sort(vif(logistic_model_10),decreasing = TRUE)
+# AIC: 16110
+
+# Final Model
+logistic_model <- logistic_model_10
+
+##### Model Evaluation #####
+logistic_model_predicted = predict(logistic_model, type = "response", newdata = logistic_data_test)  
+summary(logistic_model_predicted)
+
+# Add the prediction probability with the test data set for further model evaluation steps.
+logistic_data_test$prob <- logistic_model_predicted
+
+# View the test dataset including prediction probabity.
+View(logistic_data_test)
+
+# Let's use the probability cutoff of 50%.
+actual <- factor(ifelse(logistic_data_test$Performance.Tag==1,"Yes","No"))
+predicted <- factor(ifelse(logistic_model_predicted >= 0.50, "Yes", "No"))
+
+confusionMatrix(predicted, actual, positive = "Yes")
+# Accuracy : 95.78%
+# Sensitivity : 0%       
+# Specificity : 100%
+
+# Find optimal cutoff
+cutoff <- calculate_cutoff(logistic_model_predicted)
+
+
+predicted <- factor(ifelse(logistic_model_predicted >=cutoff, "Yes", "No"))
+confusionMatrix(predicted, actual, positive = "Yes")
+# Accuracy : 58.94%
+# Sensitivity : 66.78%       
+# Specificity : 58.59%
+##################### MODEL x #######################
+################## Combined Data ####################
+#################### With SMOTE #####################
+# Check if data is balanced
+table(logistic_data_train$Performance.Tag)
+#     0     1 
+# 45969  2024 
+# The data is unbalanced
+
+logistic_data_train_SMOTE <- SMOTE(Performance.Tag ~ ., logistic_data_train, perc.over = 100, perc.under=200)
+table(logistic_data_train_SMOTE$Performance.Tag)
+#    0    1 
+# 4048 4048 
+
+# Build Model
+logistic_model_1_SMOTE <- glm(Performance.Tag ~ ., data = logistic_data_train_SMOTE, family = "binomial")
+summary(logistic_model_1_SMOTE) 
+# AIC: 10534
+
+# Step AIC
+logistic_model_2_SMOTE <- stepAIC(logistic_model_1_SMOTE, direction = "both")
+summary(logistic_model_2_SMOTE)
+sort(vif(logistic_model_2_SMOTE),decreasing = TRUE)
+# AIC: 10510
