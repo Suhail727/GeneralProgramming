@@ -1,26 +1,16 @@
-# head(ddata)
-# str(ddata)
-# dim(ddata)
-# sum(is.na(ddata))
-# # 1428 NULL Values Present
-# colSums(is.na(ddata))
-# # No.of dependents- 3
-# # Performance.tag- 1425  
-# names(ddata)
-
-# # install.packages("stringr")
-# # install.packages("tidyr")
-# # install.packages("plyr")
-# # install.packages("dplyr", INSTALL_opts = c('--no-lock'))
-# # install.packages("ggplot2")
-# # install.packages("lubridate")
-# # install.packages("corrplot")
-# # install.packages("VIM")
-# # install.packages("treemap")
-# # install.packages("cowplot")
-# # install.packages("Information")
-# # install.packages("DMwR")
-# # install.packages("merTools")
+# install.packages("stringr")
+# install.packages("tidyr")
+# install.packages("plyr")
+# install.packages("dplyr", INSTALL_opts = c('--no-lock'))
+# install.packages("ggplot2")
+# install.packages("lubridate")
+# install.packages("corrplot")
+# install.packages("VIM")
+# install.packages("treemap")
+# install.packages("cowplot")
+# install.packages("Information")
+# install.packages("DMwR")
+# install.packages("merTools")
 library(dplyr)
 library(ggplot2)
 library(cowplot)
@@ -160,17 +150,6 @@ data <- mutate(data, salary_group = ifelse(Income <=10, 'Low Income',
 
 
 ####################### Plotting Data ###################################
-# Correlation between numeric variables
-ggpairs(data[, c('Age', 'No.of.dependents', 'Income', 'No.of.months.in.current.residence', 'No.of.months.in.current.company',
-				'No.of.times.90.DPD.or.worse.in.last.6.months', 'No.of.times.60.DPD.or.worse.in.last.6.months',
-				'No.of.times.30.DPD.or.worse.in.last.6.months', 'No.of.times.90.DPD.or.worse.in.last.12.months',
-				'No.of.times.60.DPD.or.worse.in.last.12.months', 'No.of.times.30.DPD.or.worse.in.last.12.months',
-				'Avgas.CC.Utilization.in.last.12.months','No.of.trades.opened.in.last.6.months',
-				'No.of.trades.opened.in.last.12.months', 'No.of.PL.trades.opened.in.last.6.months',
-				'No.of.PL.trades.opened.in.last.12.months', 'No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.',
-				'No.of.Inquiries.in.last.6.months..excluding.home...auto.loans.', 'Outstanding.Balance',
-				'Total.No.of.Trades')])
-
 # Gender vs Performance Tag
 plot_1<- ggplot(data, aes(factor(Performance.Tag), group = Gender)) + 
   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") + 
@@ -220,6 +199,95 @@ plot_5<- ggplot(data, aes(factor(Performance.Tag), group = Profession)) +
   geom_text(aes( label = scales::percent(..prop..),y= ..prop.. ), stat= "count", vjust = -.5) +
   scale_fill_discrete(name = "Performance Tag")
 plot_5
+
+# Marital Status vs Performance Tag
+plot_6<- ggplot(data, aes(factor(Performance.Tag), group = Marital.Status..at.the.time.of.application.)) + 
+  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") + 
+  scale_y_continuous(labels=scales::percent) +
+  geom_text(aes( label = scales::percent(..prop..),y= ..prop.. ), stat= "count", vjust = -.5) +
+  labs(title='Marital Status vs Performance Tag', x='Performance Tag',y='Percentage') + 
+  facet_grid(~Marital.Status..at.the.time.of.application.) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_6
+
+# No of dependents vs Performance Tag
+plot_7<- ggplot(data, aes(factor(Performance.Tag), group = No.of.dependents)) + 
+  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") + 
+  scale_y_continuous(labels=scales::percent) +
+  geom_text(aes( label = scales::percent(..prop..),y= ..prop.. ), stat= "count", vjust = -.5) +
+  labs(title='No of dependents vs Performance Tag', x='Performance Tag',y='Percentage') + 
+  facet_grid(~No.of.dependents) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_7
+
+# Residence type vs Performance Tag
+plot_8<- ggplot(data, aes(factor(Performance.Tag), group = Type.of.residence)) + 
+  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") + 
+  scale_y_continuous(labels=scales::percent) +
+  geom_text(aes( label = scales::percent(..prop..),y= ..prop.. ), stat= "count", vjust = -.5) +
+  labs(title='Residence type vs Performance Tag', x='Performance Tag',y='Percentage') + 
+  facet_grid(~Type.of.residence) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_8
+
+# Number of months in current residence vs Performance Tag
+plot_9 <- 
+  data %>%
+  dplyr::select(Performance.Tag, No.of.months.in.current.residence) %>%
+  group_by(Performance.Tag) %>%
+  ggplot(aes(x=factor(Performance.Tag),y=mean(No.of.months.in.current.residence, na.rm = TRUE),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
+  labs(x='Performance Tag',y='Average months in current residence') + 
+  ggtitle('Number of months in current residence vs Performance Tag') +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_9
+
+# Number of months in current company vs Performance Tag
+plot_10 <- 
+  data %>%
+  dplyr::select(Performance.Tag, No.of.months.in.current.company) %>%
+  group_by(Performance.Tag) %>%
+  ggplot(aes(x=factor(Performance.Tag),y=mean(No.of.months.in.current.company, na.rm = TRUE),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
+  labs(x='Performance Tag',y='Average months in current company') + 
+  ggtitle('Number of months in current company vs Performance Tag') +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
+  scale_fill_discrete(name = "Performance Tag") 
+plot_10
+
+# Avgas.CC.Utilization.in.last.12.months vs Peformance Tag
+plot_11<- 
+  data %>%
+  dplyr::select(Performance.Tag, Avgas.CC.Utilization.in.last.12.months) %>%
+  group_by(Performance.Tag) %>%
+  ggplot(aes(x=factor(Performance.Tag),y=mean(Avgas.CC.Utilization.in.last.12.months),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
+  labs(x='Performance Tag',y='Percentage of Avg CC utilization') + 
+  ggtitle('Avgas.CC.Utilization.in.last.12.months vs Peformance Tag') +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_11
+
+# Total No of Trades vs Performance Tag
+plot_12 <- 
+  data %>%
+  dplyr::select(Performance.Tag, Total.No.of.Trades) %>%
+  group_by(Performance.Tag) %>%
+  ggplot(aes(x=factor(Performance.Tag),y=mean(Total.No.of.Trades),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
+  labs(x='Performance Tag',y='Mean of Total.No.of.Trades') + 
+  ggtitle('Total No of Trades vs Performance Tag') +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_12
+
+# Outstanding Balance vs Performance Tag
+plot_13 <- 
+  data %>%
+  dplyr::select(Performance.Tag, Outstanding.Balance) %>%
+  group_by(Performance.Tag) %>%
+  ggplot(aes(x=factor(Performance.Tag),y=mean(Outstanding.Balance),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
+  labs(x='Performance Tag',y='Mean of Outstanding Balance') + ggtitle('Outstanding Balance vs Performance Tag') +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
+  scale_fill_discrete(name = "Performance Tag")
+plot_13
 
 ####################### WOE and IV ###################################
 # Data for WOE after removing the derived variables
@@ -863,8 +931,144 @@ summary(logistic_model_5_SMOTE)
 sort(vif(logistic_model_5_SMOTE),decreasing = TRUE)
 # AIC: 10513
 
+# Remove No.of.Inquiries.in.last.6.months..excluding.home...auto.loans. due to low p-value
+logistic_model_6_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.months.in.current.company + No.of.times.60.DPD.or.worse.in.last.6.months + 
+                        No.of.times.90.DPD.or.worse.in.last.12.months + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.6.months + No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                        Total.No.of.Trades, family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_6_SMOTE)
+sort(vif(logistic_model_6_SMOTE),decreasing = TRUE)
+# AIC: 10515
+
+# Remove No.of.PL.trades.opened.in.last.6.months due to low p-value
+logistic_model_7_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.months.in.current.company + No.of.times.60.DPD.or.worse.in.last.6.months + 
+                        No.of.times.90.DPD.or.worse.in.last.12.months + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                        Total.No.of.Trades, family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_7_SMOTE)
+sort(vif(logistic_model_7_SMOTE),decreasing = TRUE)
+# AIC: 10518
+
+# Remove No.of.times.60.DPD.or.worse.in.last.6.months due to high VIF
+logistic_model_8_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.months.in.current.company +  
+                        No.of.times.90.DPD.or.worse.in.last.12.months + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                        Total.No.of.Trades, family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_8_SMOTE)
+sort(vif(logistic_model_8_SMOTE),decreasing = TRUE)
+# AIC: 10524
+
+# Remove No.of.times.90.DPD.or.worse.in.last.12.months due to low p-value
+logistic_model_9_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.months.in.current.company + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                        Total.No.of.Trades, family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_9_SMOTE)
+sort(vif(logistic_model_9_SMOTE),decreasing = TRUE)
+# AIC: 10525
+
+# Remove No.of.months.in.current.company due to low p-value
+logistic_model_10_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans. + 
+                        Total.No.of.Trades, family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_10_SMOTE)
+sort(vif(logistic_model_10_SMOTE),decreasing = TRUE)
+# AIC: 10528
+
+# Remove Total.No.of.Trades due to high VIF
+logistic_model_11_SMOTE <- glm(formula = Performance.Tag ~ Marital.Status..at.the.time.of.application. + 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+                        , family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_11_SMOTE)
+sort(vif(logistic_model_11_SMOTE),decreasing = TRUE)
+# AIC: 10550
+
+# Remove Marital.Status..at.the.time.of.application. due to low p-value
+logistic_model_12_SMOTE <- glm(formula = Performance.Tag ~ 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + Income + No.of.months.in.current.residence + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+                        , family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_12_SMOTE)
+sort(vif(logistic_model_12_SMOTE),decreasing = TRUE)
+# AIC: 10554
+
+# Remove Income due to low p-value
+logistic_model_13_SMOTE <- glm(formula = Performance.Tag ~ 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + No.of.months.in.current.residence + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+                        , family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_13_SMOTE)
+sort(vif(logistic_model_13_SMOTE),decreasing = TRUE)
+# AIC: 10558
+
+# Remove No.of.months.in.current.residence due to low p-value
+logistic_model_14_SMOTE <- glm(formula = Performance.Tag ~ 
+                        Presence.of.open.auto.loan + 
+                        No.of.dependents + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+                        , family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_14_SMOTE)
+sort(vif(logistic_model_14_SMOTE),decreasing = TRUE)
+# AIC: 10560
+
+# Remove No.of.dependents due to low p-value
+logistic_model_15_SMOTE <- glm(formula = Performance.Tag ~ 
+                        Presence.of.open.auto.loan + 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+                        , family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_15_SMOTE)
+sort(vif(logistic_model_15_SMOTE),decreasing = TRUE)
+# AIC: 10566
+
+# Remove Presence.of.open.auto.loan due to low p-value
+logistic_model_16_SMOTE <- glm(formula = Performance.Tag ~ 
+                        No.of.times.30.DPD.or.worse.in.last.12.months + Avgas.CC.Utilization.in.last.12.months + 
+                        No.of.PL.trades.opened.in.last.12.months + 
+                        No.of.Inquiries.in.last.12.months..excluding.home...auto.loans.
+                        , family = "binomial", data = logistic_data_train_SMOTE)
+summary(logistic_model_16_SMOTE)
+sort(vif(logistic_model_16_SMOTE),decreasing = TRUE)
+# AIC: 10574
+
 # Final Model
-logistic_model <- logistic_model_5_SMOTE
+logistic_model <- logistic_model_16_SMOTE
 
 ##### Model Evaluation #####
 logistic_model_predicted = predict(logistic_model, type = "response", newdata = logistic_data_test)  
@@ -881,9 +1085,9 @@ actual <- factor(ifelse(logistic_data_test$Performance.Tag==1,"Yes","No"))
 predicted <- factor(ifelse(logistic_model_predicted >= 0.50, "Yes", "No"))
 
 confusionMatrix(predicted, actual, positive = "Yes")
-# Accuracy : 60.78%
-# Sensitivity : 65.62%       
-# Specificity : 60.57%
+# Accuracy : 58.89%
+# Sensitivity : 66.89%       
+# Specificity : 58.53%
 
 # Find optimal cutoff
 cutoff <- calculate_cutoff(logistic_model_predicted)
@@ -891,9 +1095,9 @@ cutoff <- calculate_cutoff(logistic_model_predicted)
 
 predicted <- factor(ifelse(logistic_model_predicted >=cutoff, "Yes", "No"))
 confusionMatrix(predicted, actual, positive = "Yes")
-# Accuracy : 62.29%
+# Accuracy : 62.35%
 # Sensitivity : 63.32%       
-# Specificity : 62.24%
+# Specificity : 62.30%
 
 
 
