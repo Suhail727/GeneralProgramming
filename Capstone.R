@@ -230,65 +230,6 @@ plot_8<- ggplot(data, aes(factor(Performance.Tag), group = Type.of.residence)) +
   scale_fill_discrete(name = "Performance Tag")
 plot_8
 
-# Number of months in current residence vs Performance Tag
-plot_9 <- 
-  data %>%
-  dplyr::select(Performance.Tag, No.of.months.in.current.residence) %>%
-  group_by(Performance.Tag) %>%
-  ggplot(aes(x=factor(Performance.Tag),y=mean(No.of.months.in.current.residence, na.rm = TRUE),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
-  labs(x='Performance Tag',y='Average months in current residence') + 
-  ggtitle('Number of months in current residence vs Performance Tag') +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  scale_fill_discrete(name = "Performance Tag")
-plot_9
-
-# Number of months in current company vs Performance Tag
-plot_10 <- 
-  data %>%
-  dplyr::select(Performance.Tag, No.of.months.in.current.company) %>%
-  group_by(Performance.Tag) %>%
-  ggplot(aes(x=factor(Performance.Tag),y=mean(No.of.months.in.current.company, na.rm = TRUE),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
-  labs(x='Performance Tag',y='Average months in current company') + 
-  ggtitle('Number of months in current company vs Performance Tag') +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  scale_fill_discrete(name = "Performance Tag") 
-plot_10
-
-# Avgas.CC.Utilization.in.last.12.months vs Peformance Tag
-plot_11<- 
-  data %>%
-  dplyr::select(Performance.Tag, Avgas.CC.Utilization.in.last.12.months) %>%
-  group_by(Performance.Tag) %>%
-  ggplot(aes(x=factor(Performance.Tag),y=mean(Avgas.CC.Utilization.in.last.12.months),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
-  labs(x='Performance Tag',y='Percentage of Avg CC utilization') + 
-  ggtitle('Avgas.CC.Utilization.in.last.12.months vs Peformance Tag') +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  scale_fill_discrete(name = "Performance Tag")
-plot_11
-
-# Total No of Trades vs Performance Tag
-plot_12 <- 
-  data %>%
-  dplyr::select(Performance.Tag, Total.No.of.Trades) %>%
-  group_by(Performance.Tag) %>%
-  ggplot(aes(x=factor(Performance.Tag),y=mean(Total.No.of.Trades),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
-  labs(x='Performance Tag',y='Mean of Total.No.of.Trades') + 
-  ggtitle('Total No of Trades vs Performance Tag') +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  scale_fill_discrete(name = "Performance Tag")
-plot_12
-
-# Outstanding Balance vs Performance Tag
-plot_13 <- 
-  data %>%
-  dplyr::select(Performance.Tag, Outstanding.Balance) %>%
-  group_by(Performance.Tag) %>%
-  ggplot(aes(x=factor(Performance.Tag),y=mean(Outstanding.Balance),fill=factor(Performance.Tag))) + geom_bar(stat = 'identity')  +
-  labs(x='Performance Tag',y='Mean of Outstanding Balance') + ggtitle('Outstanding Balance vs Performance Tag') +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  scale_fill_discrete(name = "Performance Tag")
-plot_13
-
 ####################### WOE and IV ###################################
 # Data for WOE after removing the derived variables
 data_WOE <- data[ , -which(names(data) %in% c("age_group","salary_group"))]
