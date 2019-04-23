@@ -7,7 +7,7 @@ def quickSort(arr,low,high):
 def partition(arr,low,high):
   # Consider last element as pivot
   pivot = arr[high]
-  # Consider another index which denotes where the pivot element should finally be inserted
+  # Consider first element as another index which denotes where the pivot element should finally be inserted
   partitionindex = low
   # Check all elements in list and 
   # if any element is smaller than pivot, swap that element with value at partition index and increment partition index
