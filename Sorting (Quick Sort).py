@@ -5,12 +5,17 @@ def quickSort(arr,low,high):
     quickSort(arr,partitionindex+1,high)
 
 def partition(arr,low,high):
+  # Consider last element as pivot
   pivot = arr[high]
+  # Consider another index which denotes where the pivot element should finally be inserted
   partitionindex = low
+  # Check all elements in list and 
+  # if any element is smaller than pivot, swap that element with value at partition index and increment partition index
   for i in range(low, high):
     if arr[i] <= pivot:
       arr[partitionindex], arr[i] = arr[i] , arr[partitionindex]
       partitionindex += 1
+  # Finally place pivot element at the partition index 
   arr[partitionindex], arr[high] = arr[high], arr[partitionindex]
   return partitionindex
 
