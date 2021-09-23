@@ -8,7 +8,7 @@ def evaluate_postfix(expression):
     elif stack:
       var1 = stack.pop()
       var2 = stack.pop()
-      stack.append(str(eval(var1 + character + var2)))
+      stack.append(str(eval(var2 + character + var1)))
   return (stack.pop())
   
 expression = input('Enter postfix expression: ')
